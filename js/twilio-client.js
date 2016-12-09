@@ -4,12 +4,13 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
     $scope.errorMessage = '';
     $scope.log = '';
     $scope.loggedIn = false;
-    $scope.inCall = true;
+    $scope.inCall = false;
     $scope.inSms = false;
     $scope.issmsaccepted = false;
     $scope.msgAttribute = {};
-    $scope.selectedTab = 1;
+    $scope.selectedTab = 0;
     $scope.call_wrap ="";
+    $scope.selectedCustomer = null;
 
 
     $scope.incomingPhoneNumber = '';
@@ -21,7 +22,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
     var worker = {};
     var latestReservation = {};
     var auxIdleSid = '';
-    var selectedCustomer = {};
+    
     var crmRecordId = '';
 
    var serviceURL="http://10.242.245.33:6020/CRMService.svc";
@@ -52,14 +53,13 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.worker = response.worker;
         setUpCallToken(response.token);
         setUpWorkerToken($scope.worker.token)
-        getCustomerDetails('9611979645');
+       // getCustomerDetails('9611979645');
         $scope.loggedIn = true;
       }, function errorCallback(response) {
         console.log(response);
         $scope.errorMessage = response.data.errormessage;
       })
     }
-
     function setUpCallToken(token) {
       Twilio.Device.setup(token, {
         'debug': true
@@ -106,14 +106,14 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 }
             )
         }else{
-           //consider its SMS task 
-           $scope.inSms = true;
+          //consider its SMS task 
+          $scope.inSms = true;
           $scope.msgAttribute = attributes;
-          $scope.selectedTab = 2;
-
+          $scope.selectedTab = 1;
         }
 
       });
+
 
       worker.activities.fetch(function (error, activityList) {
         if (error) {
@@ -159,6 +159,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
           }
         }
       );
+      createSMSActivity($scope.msgAttribute);
       $scope.issmsaccepted = true;
     }
 
@@ -183,6 +184,8 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
       Twilio.Device.disconnectAll();
       $scope.inCall = false;
       $scope.isCallAccepted = false;
+      $scope.selectedCustomer = null;
+      sendCallWrap();
     }
 
     $scope.completeTask= function(taskType){
@@ -191,6 +194,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
       if(taskType === "SMS"){
           $scope.inSms = false;
           $scope.issmsaccepted = false;
+          $scope.msgAttribute = {};
       }
     }
 
@@ -253,7 +257,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
   
     $scope.redirect = function (customer) {
-      selectedCustomer =  customer;
       createPhoneCallActivity(customer);
       chrome.runtime.sendMessage(
         'clgmggeclboefllmpcehljeckoggfoda',
@@ -261,6 +264,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         function (response) {
           console.log("response: " + JSON.stringify(response));
         });
+        $scope.selectedCustomer =  customer;
     }
     
     function getCustomerDetails(mobileNo){
@@ -273,8 +277,8 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         console.log("response",response.data);
         $scope.customerDetails=response.data.GetCustomerDetailsResult.Customers;
         // if($scope.customerDetails.length === 1){     
-        //   selectedCustomer = $scope.customerDetails[0];
-        //   $scope.redirect(selectedCustomer);
+        //   $scope.selectedCustomer = $scope.customerDetails[0];
+        //   $scope.redirect($scope.selectedCustomer);
         // }
         console.log("customerDetails",$scope.customerDetails);
       };
@@ -296,7 +300,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             PhoneNumber : "9611979645",//$scope.incomingPhoneNumber
             IsInbound : true,
             UserID : 'Alice@utilities360.onmicrosoft.com', 
-            Subject : 'About Gas/elec conection'
+            Subject : 'Phone Call from ' + "9611979645" //$scope.incomingPhoneNumber
         }
       }
       var successCB=function(response){
@@ -314,7 +318,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
       initiatepostAPI(url,requestData,successCB,errorCB);
     }
 
-    $scope.sendCallWrap = function(){
+    function sendCallWrap(){
       var url = serviceURL+ '/CallWrap';
 
       var requestData = {
@@ -336,6 +340,34 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
       };
       initiatepostAPI(url,requestData,successCB,errorCB);
     }
+    
+    function createSMSActivity(smsAttributes){
+      var url = serviceURL+ '/CreateSMSActivity';
+
+      var requestData = {
+        request :{
+          AccountNumber: smsAttributes.accountNo, //'4323657919', //
+          PhoneNumber : smsAttributes.from,   //'9611979645',  //
+          UserID : 'Alice@utilities360.onmicrosoft.com', 
+          IsInbound : true, 
+          Subject: 'SMS from '+ '9611979645', 
+          Description: smsAttributes.subject  //'I have issue when submit meet read'
+        }
+      }
+      var successCB=function(response){
+        console.log("response",response.data);  
+        if(response.data && response.data.CreateSMSActivityResult.SuccessFlag){
+          console.log("Successfully done call wrap ");
+        }else{
+          console.log("There is an error when trying to do call Wrap", response.data.CallWrapResult.Error);
+        }
+      };
+      var errorCB=function(error){
+        console.log(response);
+      };
+      initiatepostAPI(url,requestData,successCB,errorCB);
+    }
+
 
 
 
@@ -356,9 +388,9 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
           ++$scope.hours;
         }
       }
-      //$scope.seconds = $scope.seconds < 9 && !$scope.seconds.startsWith("0") ? "0" + $scope.seconds : $scope.seconds;
-     // $scope.minutes = $scope.minutes < 9 && !$scope.minutes.startsWith("0") ? "0" + $scope.minutes : $scope.minutes;
-     // $scope.hours = $scope.hours < 9 && !$scope.hours.startsWith("0") ? "0" + $scope.hours : $scope.hours;
+    //   $scope.seconds = $scope.seconds < 9 && $scope.seconds.length == 1 ? "0" + $scope.seconds : $scope.seconds;
+    //  $scope.minutes = $scope.minutes < 9 && !$scope.minutes.startsWith("0") ? "0" + $scope.minutes : $scope.minutes;
+    //  $scope.hours = $scope.hours < 9 && !$scope.hours.startsWith("0") ? "0" + $scope.hours : $scope.hours;
     }
 
     $scope.stopTimer = function () {
@@ -374,53 +406,47 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
     }
 
 
-    $scope.openToast = function ($event) {
-      $mdToast.show($mdToast.simple().textContent('Hello!'));
-      // Could also do $mdToast.showSimple('Hello');
-    };
+    // $scope.WebSocketTest = function () {
+    //   window.WebSocket = window.WebSocket || window.MozWebSocket;
 
+    //   var connection = wsConnection = new WebSocket('ws://twilio-client-thilojith.c9users.io');
 
-    $scope.WebSocketTest = function () {
-      window.WebSocket = window.WebSocket || window.MozWebSocket;
+    //   connection.onopen = function (con) {
+    //     console.log("connecting...................", con);
+    //     connection.send(JSON.stringify({ ky: "heloo", ju: "dfdsf" }));
+    //     // connection is opened and ready to use
+    //   };
 
-      var connection = wsConnection = new WebSocket('ws://twilio-client-thilojith.c9users.io');
+    //   connection.onerror = function (error) {
+    //     console.log("error...................", error);
+    //     // an error occurred when sending/receiving data
+    //   };
 
-      connection.onopen = function (con) {
-        console.log("connecting...................", con);
-        connection.send(JSON.stringify({ ky: "heloo", ju: "dfdsf" }));
-        // connection is opened and ready to use
-      };
+    //   connection.onmessage = function (message) {
+    //     // try to decode json (I assume that each message from server is json)
+    //     try {
+    //       var json = JSON.parse(message.data);
+    //       console.log("json.................", json)
+    //       handleWSMessage(json);
+    //     } catch (e) {
+    //       console.log('This doesn\'t look like a valid JSON: ', message.data);
+    //       return;
+    //     }
+    //     // handle incoming message
+    //   };
 
-      connection.onerror = function (error) {
-        console.log("error...................", error);
-        // an error occurred when sending/receiving data
-      };
-
-      connection.onmessage = function (message) {
-        // try to decode json (I assume that each message from server is json)
-        try {
-          var json = JSON.parse(message.data);
-          console.log("json.................", json)
-          handleWSMessage(json);
-        } catch (e) {
-          console.log('This doesn\'t look like a valid JSON: ', message.data);
-          return;
-        }
-        // handle incoming message
-      };
-
-    }
-    function sendMessage(msg) {
-      wsConnection.send(JSON.stringify(msg));
-    }
-    function handleWSMessage(msg) {
-      if (msg.callBackType === "SMS" && msg.assginedWorker === $scope.worker.sid) {
-        $scope.inSms = true;
-        $scope.msgAttribute = msg;
-        $scope.selectedTab = 2;
-      }
-    }
-    $scope.WebSocketTest();
+    // }
+    // function sendMessage(msg) {
+    //   wsConnection.send(JSON.stringify(msg));
+    // }
+    // function handleWSMessage(msg) {
+    //   if (msg.callBackType === "SMS" && msg.assginedWorker === $scope.worker.sid) {
+    //     $scope.inSms = true;
+    //     $scope.msgAttribute = msg;
+    //     $scope.selectedTab = 2;
+    //   }
+    // }
+    // $scope.WebSocketTest();
 
 
   }]);

@@ -87,7 +87,7 @@
                   <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
                     <div ng-cloak>
                       <md-content class="md-padding">
-                        <md-tabs md-dynamic-height md-border-bottom  md-selected="selectedTab">
+                        <md-tabs md-dynamic-height md-border-bottom  md-selected="selectedTab" md-swipe-content="true">
                           <md-tab id="tab1" >
                             <md-tab-label>
                               <a><i class="material-icons md-36">phone_in_talk</i></img>
@@ -141,24 +141,18 @@
                                     </center>
 
                                   </div>
-                                  <div>
-                                    <md-input-container class="md-block call-wrap">
-                                      <label>Call Wrap</label>
-                                      <textarea ng-model="call_wrap" md-select-on-focus  placeholder="Call Notes.."></textarea>
-                                      <md-button class="md-primary md-raised" ng-click="sendCallWrap()">Submit</md-button>
-                                    </md-input-container>
-                                  </div>
+                                  
                                 </div>
 
-                                <md-list md-dynamic-height flex>
+                                <md-list md-dynamic-height flex ng-show="!selectedCustomer">
 
                                   <md-subheader class="md-no-sticky">Matching Contacts
 
                                   </md-subheader>
                                   <md-list-item class="md-3-line" ng-repeat="customer in customerDetails" ng-click="redirect(customer)"  >
-                                    <i class="material-icons md-36 md-avatar">account_circle</i>
+                                    <i class="material-icons md-36 avator_icon">account_circle</i>
 
-                                    <div class="md-list-item-text">
+                                    <div class="md-list-item-text  m-t-0">
                                       <h3> {{ customer.FullName }} </h3>
                                       <p><a class="customer_url" >{{customer.AccountNumber}}</a></p>
                                       
@@ -166,6 +160,32 @@
 
                                   </md-list-item>
                                 </md-list>
+
+                                <md-list md-dynamic-height flex ng-show="selectedCustomer">
+
+                                  <md-subheader class="md-no-sticky">Customer Detail
+
+                                  </md-subheader>
+                                  <md-list-item class="md-3-line" ng-click="null" >
+                                    <i class="material-icons md-36 avator_icon">account_circle</i>
+
+                                    <div class="md-list-item-text m-t-0">
+                                      <h3> {{ selectedCustomer.FullName }} </h3>
+                                      <p><a class="customer_url" >{{selectedCustomer.AccountNumber}}</a></p>
+                                      
+                                    </div>
+
+                                  </md-list-item>
+                                </md-list>
+
+
+                                <div ng-show="isCallAccepted">
+                                    <md-input-container class="md-block call-wrap">
+                                      <label>Notes</label>
+                                      <textarea ng-model="call_wrap" md-select-on-focus ></textarea>
+                                    </md-input-container>
+                                </div>
+
                               </div>
                             </md-tab-body>
                           </md-tab>
@@ -177,10 +197,18 @@
                               </a>
                             </md-tab-label>
                             <md-tab-body>
+                              
+                                    <section layout-gt="column" layout-align="center center" layout-wrap class="waiting">
+                                  <div>
+
+                                    <md-button class="md-fab md-hue-2 wait" >
+                                      <i class="material-icons md-48 blink" style="color:white">textsms</i>
+                                    </md-button>
+
+                                    Waiting for a SMS
+                                  </div>
+                                </section>
                               <div class="md-display-2">
-                                <div ng-show="!inSms">
-                                  Waiting for SMS
-                                </div>
                                 <div ng-show="inSms">
                                   <div>
                                     <div class="msgbody">
@@ -216,7 +244,7 @@
                                     <div ng-show="issmsaccepted ">
                                       <section layout="row " layout-sm="column " layout-align="center center " layout-wrap>
                                       <md-button class="md-fab md-hue-2 ans " aria-label="Completed" ng-click="completeTask('SMS')" >
-                                      <i class="material-icons md-36 " style="color:white ">done_all</i>
+                                        <i class="material-icons md-36 " style="color:white ">done_all</i>
                                       </md-button>
                                       <span class="caption ">Completed</span>
                                     </section>
