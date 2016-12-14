@@ -4,13 +4,14 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.errorMessage = '';
         $scope.log = '';
         $scope.loggedIn = false;
-        $scope.inCall = false;
+        $scope.inCall = true;
         $scope.inSms = false;
         $scope.issmsaccepted = false;
         $scope.msgAttribute = {};
         $scope.selectedTab = 0;
         $scope.call_wrap = "";
         $scope.selectedCustomer = null;
+        $scope.customerDetails = null;
 
 
         $scope.incomingPhoneNumber = '';
@@ -54,7 +55,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 $scope.worker = response.worker;
                 setUpCallToken(response.token);
                 setUpWorkerToken($scope.worker.token)
-                //getCustomerDetails('9611979644');
+                getCustomerDetails('+19733689700');
                 $scope.loggedIn = true;
             }, function errorCallback(response) {
                 console.log(response);
@@ -259,15 +260,23 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.issmsaccepted = true;
         }
 
-
-        $scope.redirect = function(customer) {
+        $scope.onSelectCustomer = function(customer) {
             createPhoneCallActivity(customer);
+            $scope.redirect(customer.AccountRecordURL);
+            setTimeout(function() {
+                $scope.selectedCustomer = customer;
+            }, 1000)
+
+        }
+
+        $scope.redirect = function(url) {
+
             chrome.runtime.sendMessage(
-                'clgmggeclboefllmpcehljeckoggfoda', { myCustomMessage: customer.AccountRecordURL },
+                'mhmkebjaoeliiemcjapjlipcmoddgcii', { myCustomMessage: url },
                 function(response) {
                     console.log("response: " + JSON.stringify(response));
                 });
-            $scope.selectedCustomer = customer;
+
         }
 
         function getCustomerDetails(mobileNo) {
@@ -278,12 +287,17 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
             var successCB = function(response) {
                 console.log("response", response.data);
-                $scope.customerDetails = response.data.GetCustomerDetailsResult.Customers;
-                // if($scope.customerDetails.length === 1){     
-                //   $scope.selectedCustomer = $scope.customerDetails[0];
-                //   $scope.redirect($scope.selectedCustomer);
-                // }
-                console.log("customerDetails", $scope.customerDetails);
+                var customerResult = response.data.GetCustomerDetailsResult;
+                if (customerResult.SuccessFlag) {
+                    $scope.customerDetails = customerResult.Customers;
+                    if ($scope.customerDetails === null) {
+                        $scope.redirect(customerResult.SearchPageURL);
+                    } else if ($scope.customerDetails.length === 1) {
+                        $scope.selectedCustomer = $scope.customerDetails[0];
+                        $scope.redirect($scope.selectedCustomer.AccountRecordURL);
+                    }
+                }
+                //console.log("customerDetails", $scope.customerDetails);
             };
             var errorCB = function(error) {
                 console.log(response);
