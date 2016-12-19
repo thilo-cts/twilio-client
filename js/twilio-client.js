@@ -54,8 +54,9 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
                 $scope.worker = response.worker;
                 setUpCallToken(response.token);
-                setUpWorkerToken($scope.worker.token)
-                getCustomerDetails('+19733689700');
+                setUpWorkerToken($scope.worker.token);
+                // getCustomerDetails('733689700');
+                //getCustomerDetails('+19733689700');
                 $scope.loggedIn = true;
             }, function errorCallback(response) {
                 console.log(response);
@@ -190,6 +191,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.inCall = false;
             $scope.isCallAccepted = false;
             $scope.selectedCustomer = null;
+            $scope.customerDetails = null;
             sendCallWrap();
         }
 
@@ -270,13 +272,12 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         }
 
         $scope.redirect = function(url) {
-
+            console.log("redirect....",url);
             chrome.runtime.sendMessage(
-                'mhmkebjaoeliiemcjapjlipcmoddgcii', { myCustomMessage: url },
+                'clgmggeclboefllmpcehljeckoggfoda', { myCustomMessage: url },
                 function(response) {
-                    console.log("response: " + JSON.stringify(response));
-                });
-
+                    console.log("response of redirect *****: " + JSON.stringify(response));
+            });
         }
 
         function getCustomerDetails(mobileNo) {
@@ -290,12 +291,13 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 var customerResult = response.data.GetCustomerDetailsResult;
                 if (customerResult.SuccessFlag) {
                     $scope.customerDetails = customerResult.Customers;
-                    if ($scope.customerDetails === null) {
-                        $scope.redirect(customerResult.SearchPageURL);
-                    } else if ($scope.customerDetails.length === 1) {
+                     if ($scope.customerDetails.length === 1) {
                         $scope.selectedCustomer = $scope.customerDetails[0];
                         $scope.redirect($scope.selectedCustomer.AccountRecordURL);
                     }
+                }else{        
+                    console.log(",,gonn call redirect,,");        
+                    $scope.redirect(customerResult.SearchPageURL);
                 }
                 //console.log("customerDetails", $scope.customerDetails);
             };
@@ -307,6 +309,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             initiatepostAPI(url, data, successCB, errorCB);
 
         }
+
 
         function createPhoneCallActivity(customer) {
             var url = serviceURL + '/CreatePhoneCallActivity';
