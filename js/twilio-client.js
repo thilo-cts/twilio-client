@@ -4,7 +4,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.errorMessage = '';
         $scope.log = '';
         $scope.loggedIn = false;
-        $scope.inCall = true;
+        $scope.inCall = false;
         $scope.inSms = false;
         $scope.issmsaccepted = false;
         $scope.msgAttribute = {};
