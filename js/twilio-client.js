@@ -55,6 +55,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 $scope.worker = response.worker;
                 setUpCallToken(response.token);
                 setUpWorkerToken($scope.worker.token);
+
                 // getCustomerDetails('733689700');
                 //getCustomerDetails('+19733689700');
                 $scope.loggedIn = true;
@@ -112,10 +113,14 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     )
                 } else {
                     //consider its SMS task 
-                    $scope.inSms = true;
-                    $scope.msgAttribute = attributes;
-                    $scope.selectedTab = 1;
-                    $scope.$apply();
+                    if (attributes.callBackType === "SMS") {
+                        $scope.inSms = true;
+                        $scope.msgAttribute = attributes;
+                        console.log("...attributes...", attributes);
+                        $scope.redirect(attributes.caseUrl);
+                        $scope.selectedTab = 1;
+                        $scope.$apply();
+                    }
                 }
 
             });
@@ -163,9 +168,13 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     for (var property in reservation) {
                         console.log(property + " : " + reservation[property]);
                     }
+                    console.log(".......msg attribute....", $scope.msgAttribute);
+                    updateCase($scope.msgAttribute.caseId);
+
                 }
+
             );
-            createSMSActivity($scope.msgAttribute);
+            //createSMSActivity($scope.msgAttribute);
             $scope.issmsaccepted = true;
         }
 
@@ -272,12 +281,12 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         }
 
         $scope.redirect = function(url) {
-            console.log("redirect....",url);
+            console.log("redirect....", url);
             chrome.runtime.sendMessage(
-                'clgmggeclboefllmpcehljeckoggfoda', { myCustomMessage: url },
+                'mhmkebjaoeliiemcjapjlipcmoddgcii', { myCustomMessage: url },
                 function(response) {
                     console.log("response of redirect *****: " + JSON.stringify(response));
-            });
+                });
         }
 
         function getCustomerDetails(mobileNo) {
@@ -291,12 +300,12 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 var customerResult = response.data.GetCustomerDetailsResult;
                 if (customerResult.SuccessFlag) {
                     $scope.customerDetails = customerResult.Customers;
-                     if ($scope.customerDetails.length === 1) {
+                    if ($scope.customerDetails.length === 1) {
                         $scope.selectedCustomer = $scope.customerDetails[0];
                         $scope.redirect($scope.selectedCustomer.AccountRecordURL);
                     }
-                }else{        
-                    console.log(",,gonn call redirect,,");        
+                } else {
+                    console.log(",,gonn call redirect,,");
                     $scope.redirect(customerResult.SearchPageURL);
                 }
                 //console.log("customerDetails", $scope.customerDetails);
@@ -308,6 +317,21 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
             initiatepostAPI(url, data, successCB, errorCB);
 
+        }
+
+
+        function updateCase(caseId) {
+            var data = { request: { CaseId: caseId, OwnerId: $scope.worker.sid } };
+            var url = serviceURL + "/UpdateCase";
+
+            var successCB = function(response) {
+                console.log("response ofupdate case", response.data);
+
+            };
+            var errorCB = function(error) {
+                console.log("....error in update case...", error);
+            }
+            initiatepostAPI(url, data, successCB, errorCB);
         }
 
 
