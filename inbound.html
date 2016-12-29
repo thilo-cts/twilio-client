@@ -1,5 +1,5 @@
 <md-tab class="maintab1">
-        <md-tab-label>
+        <md-tab-label class="lightBlue">
             <span class="heading">Inbound</span>
         </md-tab-label>
         <md-tab-body>
@@ -155,37 +155,38 @@ Close Task
                     </a>
                 </md-tab-label>
                 <md-tab-body>
-                    <md-card ng-show="inChat">
-                        <div class="options" ng-show="!isChataccepted">
-                            <div> The chat request from {{chatCustomer}} </div>
-                            <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
-                                <md-button class="md-primary md-raised md-hue-2 accept" aria-label="Answer" ng-click="acceptChat()">Accept</md-button>
-                                <md-button class="md-primary md-raised md-hue-2 reject " aria-label="Reject" ng-click="rejectChat()">Reject</md-button>
-                            </section>
-                        </div>
-                        <section layout="row " class="chat-container" ng-show="isChataccepted">
-                            <md-list md-dynamic-height class="msg ">
-                                <md-list-item ng-repeat="msg in channelMessages">
-                                    <i class="material-icons md-fab " style="color:#000080 ">comment</i>
-                                    <div>
-                                        <div class="message "  ng-class="{'customer' : msg.author !== worker.friendly_name}"> {{msg.message}}</div>
-                                    </div>
-                                </md-list-item>
-                            </md-list>
-                        </section>
+                    <md-card ng-show="inChat && !isChataccepted" md-theme="{{ showDarkTheme ? 'dark-purple' : 'default' }}" md-theme-watch>
+                            <md-card-title>
+                                <md-card-title-text>
+                                    <span class="md-headline">Chat Request</span>
+                                    <span class="md-subhead">Would you like to accept the chat request from {{chatCustomer}}</span>
+                                </md-card-title-text>
+                            </md-card-title>
+                            <md-card-actions layout="row" layout-align="end center">
+                                <md-button class="md-primary md-hue-1" ng-click="acceptChat()" >Accept</md-button>
+                                <md-button class="md-accent" ng-click="rejectChat()">Reject</md-button>
+                            </md-card-actions>
                     </md-card>
                     <div ng-show="isChataccepted">
-                            <div>
-                                <input type="text" id="agentMessage" />
-                                    <md-icon>
-                                        <i ng-click="sendMessage()" class="material-icons " style="color:#66D9FA ">send</i>
-                                     </md-icon>
+                        <md-card class="chatarea">
+                            <div  ng-repeat="msg in channelMessages">
+                                <div class="agent-message" ng-class="{'customer-message' : msg.author !== worker.friendly_name}">
+                                    <div style="word-break: break-all;">
+                                        {{msg.message}}
+                                 
+                                    </div>
+                                    <div><small>{{msg.period}}</small></div>
+                                </div>
                             </div>
-                        <section layout="row " layout-sm="column " layout-align="center center " layout-wrap>
-                            <md-button class="md-primary md-raised md-hue-2 accept" aria-label="Completed" ng-click="completeTask('Chat')" >Close Task
-                            </md-button>
-                        </section >
 
+                        </md-card>
+                        <div class="input-field">
+                            <textarea class="form-control message-area" id="agentMessage" placeholder="Type Your Message here"/> </textarea> 
+                                <md-icon>
+                                <i ng-click="sendMessage()" class="material-icons " style="color:#66D9FA ">send</i>
+                                </md-icon>
+                         </div>
+                    <md-button class="md-primary closebtn" ng-click="completeTask('Chat')">Close Chat</md-button>
                     </div>
                 </md-tab-body>
             </md-tab>

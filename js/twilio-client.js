@@ -17,7 +17,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.channelMessages = [];
         $scope.agentMessage1 ="hello";
 
-
         $scope.incomingPhoneNumber = '';
         $scope.seconds = "0"+"0";
         $scope.minutes = "0"+"0";
@@ -407,6 +406,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     channel.on('messageUpdated', addMessage);
                     channel.on('memberJoined', onMembersJoined);
                      workerChannel = channel;
+                    // getAllChannels()
 
                 });
             });
@@ -416,21 +416,26 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 console.log("All............channels..", channels);
                 angular.forEach(channels.items, function(key, value){
                     console.log("keyyyy..............", key.friendlyName,"..........value..");
-                   // key.leave();
-                    //key.delete();
+                    key.leave();
+                    key.delete();
                 });
             });
         }
 
         function addMessage(message) {
             console.log("message", message);
+            var time = message.timestamp;
+            var minutes = time.getMinutes();
+            if (minutes < 10) { minutes = '0' + minutes; }   
+            var ampm = Math.floor(time.getHours()/12) ? 'PM' : 'AM';
+            var period = (time.getHours()%12) + ':' + minutes + ' ' + ampm; 
             var msg = {
                 author: message.author,
-                message: message.body
+                message: message.body,
+                period: period
             }
-
             $scope.channelMessages.push(msg);
-           $scope.$apply();
+            $scope.$apply();
         }
 
         function addMember(memberId) {
@@ -453,7 +458,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             });
             
         }
-
 
         $scope.redirect = function(url) {
             console.log("redirect....", url);
@@ -502,10 +506,8 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         function updateCase(caseId) {
             var data = { request: { CaseId: caseId, OwnerId: $scope.worker.sid } };
             var url = serviceURL + "/UpdateCase";
-
             var successCB = function(response) {
                 console.log("response ofupdate case", response.data);
-
             };
             var errorCB = function(error) {
                 console.log("....error in update case...", error);
@@ -598,29 +600,26 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             initiatepostAPI(url, requestData, successCB, errorCB);
         }
 
-
-
-
         $scope.startTimer = function() {
             timerID = $interval(function() {
                 timer();
             }, 1000);
         };
 
-      function timer() {
-      ++$scope.seconds;
-      $scope.seconds = $scope.seconds <=9 ? "0"+$scope.seconds : $scope.seconds;
-      if ($scope.seconds == 60) {
-        $scope.seconds = "0"+"0";
-        ++$scope.minutes;
-        $scope.minutes = $scope.minutes <= 9 ? "0"+$scope.minutes : $scope.minutes;
-        if ($scope.minutes == 60) {
-          $scope.minutes ="0"+"0";
-          ++$scope.hours;
-          $scope.hours = $scope.hours <= 9 ? "0"+$scope.hours : $scope.hours;
-        }
-      }
-    }
+       function timer() {
+            ++$scope.seconds;
+            $scope.seconds = $scope.seconds <=9 ? "0"+$scope.seconds : $scope.seconds;
+            if ($scope.seconds == 60) {
+                $scope.seconds = "0"+"0";
+                ++$scope.minutes;
+                $scope.minutes = $scope.minutes <= 9 ? "0"+$scope.minutes : $scope.minutes;
+                if ($scope.minutes == 60) {
+                $scope.minutes ="0"+"0";
+                ++$scope.hours;
+                $scope.hours = $scope.hours <= 9 ? "0"+$scope.hours : $scope.hours;
+                }
+            }
+            }
         $scope.stopTimer = function() {
             $interval.cancel(timerID);
             $timeout(cleartimer, 2000);
@@ -632,8 +631,4 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.hours = 00;
             $scope.isCallAccepted = false;
         }
-
-
-       
-
     }]);
