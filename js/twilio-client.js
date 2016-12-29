@@ -1,32 +1,55 @@
 angular.module('agent', ['ngMaterial', 'ngRoute'])
     .controller('agentLoginController', ['$scope', '$http', '$interval', '$timeout', '$mdToast', function($scope, $http, $interval, $timeout, $mdToast) {
-        chrome.app.window.current().setAlwaysOnTop(true);
+       // chrome.app.window.current().setAlwaysOnTop(true);
         $scope.errorMessage = '';
         $scope.log = '';
         $scope.loggedIn = false;
         $scope.inCall = false;
         $scope.inSms = false;
+        $scope.inChat = false;
         $scope.issmsaccepted = false;
+        $scope.isChataccepted = false;
         $scope.msgAttribute = {};
         $scope.selectedTab = 0;
         $scope.call_wrap = "";
         $scope.selectedCustomer = null;
         $scope.customerDetails = null;
+        $scope.channelMessages = [];
+        $scope.agentMessage1 ="hello";
 
 
         $scope.incomingPhoneNumber = '';
-        $scope.seconds = 00;
-        $scope.minutes = 00;
-        $scope.hours = 00;
+        $scope.seconds = "0"+"0";
+        $scope.minutes = "0"+"0";
+        $scope.hours = "0"+"0";
+
+        $scope.activity = '';
 
         var wsConnection = {};
         var worker = {};
         var latestReservation = {};
         var auxIdleSid = '';
-
+        var endpointId = "17262430f288cd70522c1db3da827388";
         var crmRecordId = '';
+        var chatClient = {};
+        var workerChannel = {};
+        var channelMessages = [];
 
-        var serviceURL = "http://10.242.245.33:6020/CRMService.svc";
+
+        var serviceURL = "https://cxm.cognizant.com/CRMService.svc";
+        var crmLocalUrl = "http://localhost:5000/?";
+
+        var initiateGetAPI = function(url) {
+            $http({
+                url: url,
+                method: "GET",
+            }).then(function successCB(response){
+                console.log("succuessfully called GET API", response);
+            }), function(error){
+                console.log("Error in GET API call ", error)
+            }
+        };
+
 
         var initiatepostAPI = function(url, data, successCB, errorCB) {
             $http({
@@ -44,7 +67,8 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 method: 'POST',
                 url: 'https://twilio-client-thilojith.c9users.io/getToken',
                 data: {
-                    workerName: $scope.workerName
+                    workerName: $scope.workerName,
+                    endpointId: endpointId
                 }
             }).then(function successCallback(response) {
                 console.log("...", response.data);
@@ -55,7 +79,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 $scope.worker = response.worker;
                 setUpCallToken(response.token);
                 setUpWorkerToken($scope.worker.token);
-
+                setUpChatChannel(response.clientChannelToken);
                 // getCustomerDetails('733689700');
                 //getCustomerDetails('+19733689700');
                 $scope.loggedIn = true;
@@ -77,6 +101,12 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             initiateWorker(worker);
         }
 
+        function setUpChatChannel(token) {
+            chatClient = new Twilio.Chat.Client(token,{logLevel: 'error'});
+            initiateChatClient();
+        }
+
+
         function initiateWorker(worker) {
             worker.on("ready", function(worker) {
                 console.log("ready...........")
@@ -84,11 +114,15 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 console.log(worker.friendlyName) // 'Worker 1'
                 console.log(worker.activityName) // 'Reserved'
                 console.log(worker.available)
+                
+                $scope.activity = worker.activityName;
+                $scope.$apply();
                     // changeWorkerStatus();     // false
             });
             worker.on("error", function(error) {
                 console.log("Websocket had an error: " + error.response + " with message: " + error.message);
             });
+
             worker.on("reservation.created", function(reservation) {
                 console.log(".....reservation.created......", reservation)
                 latestReservation = reservation;
@@ -117,14 +151,29 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                         $scope.inSms = true;
                         $scope.msgAttribute = attributes;
                         console.log("...attributes...", attributes);
-                        $scope.redirect(attributes.caseUrl);
+
+                        var url = crmLocalUrl+"CaseId={"+ attributes.caseId +"}";
+                        initiateGetAPI(url)
+
                         $scope.selectedTab = 1;
+                        $scope.$apply();
+                    }else if (attributes.callBackType === "CHAT"){
+                        addMember(attributes.customerIdentity);
+                        $scope.chatCustomer = attributes.customerIdentity;
+                        $scope.selectedTab = 2;
+                        $scope.inChat = true;
                         $scope.$apply();
                     }
                 }
 
             });
+            
+            worker.on("activity.update", function(worker) {
 
+                console.log("am on activity update .........",worker.activityName);
+                $scope.activity = worker.activityName;
+                $scope.$apply();
+            }); 
 
             worker.activities.fetch(function(error, activityList) {
                 if (error) {
@@ -137,11 +186,15 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     console.log(data[i].friendlyName);
                     if (data[i].friendlyName === 'Idle') {
                         auxIdleSid = data[i].sid;
+                        if($scope.activity !== "Reserved"){
+                            changeWorkerStatus(auxIdleSid);
+                        }
                     }
 
                 }
             });
         }
+
 
         function changeWorkerStatus(activitySid) {
             var props = { "ActivitySid": activitySid };
@@ -164,7 +217,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                         return;
                     }
                     console.log("reservation accepted");
-                    //$scope.issmsaccepted = true;
                     for (var property in reservation) {
                         console.log(property + " : " + reservation[property]);
                     }
@@ -174,7 +226,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 }
 
             );
-            //createSMSActivity($scope.msgAttribute);
             $scope.issmsaccepted = true;
         }
 
@@ -194,6 +245,46 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             );
         }
 
+
+        $scope.acceptChat = function() {
+            latestReservation.accept(
+                function(error, reservation) {
+                    if (error) {
+                        console.log(error.code);
+                        console.log(error.message);
+                        return;
+                    }
+                    console.log("reservation accepted");
+                    for (var property in reservation) {
+                        console.log(property + " : " + reservation[property]);
+                    }
+                    console.log(".......msg attribute....", $scope.msgAttribute);
+
+                }
+
+            );
+            //createSMSActivity($scope.msgAttribute);
+            $scope.isChataccepted = true;
+        }
+
+        $scope.rejectChat = function() {
+            latestReservation.reject(
+                function(error, reservation) {
+                    if (error) {
+                        console.log(error.code);
+                        console.log(error.message);
+                        return;
+                    }
+                    console.log("reservation rejected");
+                    for (var property in reservation) {
+                        console.log(property + " : " + reservation[property]);
+                    }
+                }
+            );
+            $scope.inChat = false;
+        }
+
+
         $scope.hangUpCall = function() {
             $scope.stopTimer();
             Twilio.Device.disconnectAll();
@@ -211,7 +302,25 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 $scope.inSms = false;
                 $scope.issmsaccepted = false;
                 $scope.msgAttribute = {};
+                closeCRMSession();
+            }else if(taskType === "Chat"){
+                $scope.inChat = false;
+                $scope.isChataccepted = false;
+                $scope.msgAttribute = {};
+                $scope.channelMessages = [];
+              // removeCustomerFromChannel();
             }
+
+        }
+        function removeCustomerFromChannel(){
+            workerChannel.getMembers().then(function(members){
+                console.log("members.............",members);
+                angular.forEach(members, function(key, member){
+                    if(member.identity  !== $scope.worker.friendlyName){
+                        member.remove();
+                    }
+                })
+            });
         }
 
         Twilio.Device.ready(function(device) {
@@ -273,20 +382,86 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
         $scope.onSelectCustomer = function(customer) {
             createPhoneCallActivity(customer);
-            $scope.redirect(customer.AccountRecordURL);
+            
+            var url = crmLocalUrl + "AccountNumber=" +customer.AccountNumber;
+            initiateGetAPI(url);
+
             setTimeout(function() {
                 $scope.selectedCustomer = customer;
             }, 1000)
 
         }
 
+
+        function initiateChatClient() {
+           
+            chatClient.createChannel({
+                friendlyName: $scope.worker.friendlyName + "_" + $scope.worker.sid,
+                isPrivate: true,
+            }).then(function(channel) {
+               
+                console.log("Agent has created a channel..", channel._friendlyName);
+                channel.join().then(function() {
+                    console.log("Agent has joined into his owm channel")
+                    channel.on('messageAdded', addMessage);
+                    channel.on('messageUpdated', addMessage);
+                    channel.on('memberJoined', onMembersJoined);
+                     workerChannel = channel;
+
+                });
+            });
+        }
+        function getAllChannels(){
+            chatClient.getUserChannels().then(function(channels){
+                console.log("All............channels..", channels);
+                angular.forEach(channels.items, function(key, value){
+                    console.log("keyyyy..............", key.friendlyName,"..........value..");
+                   // key.leave();
+                    //key.delete();
+                });
+            });
+        }
+
+        function addMessage(message) {
+            console.log("message", message);
+            var msg = {
+                author: message.author,
+                message: message.body
+            }
+
+            $scope.channelMessages.push(msg);
+           $scope.$apply();
+        }
+
+        function addMember(memberId) {
+            workerChannel.invite(memberId).then(function() {
+                console.log("....Member added ....", memberId);
+            });
+        }
+
+        function onMembersJoined(member) {
+            console.log("member  joined.....", member);
+        }
+
+        $scope.sendMessage = function() {
+            var msg = $('#agentMessage').val();
+            workerChannel.sendMessage(msg).then(function() {
+                // msg.author = 'me';
+                // $scope.channelMessages.push(msg);
+                console.log("after sent message from agent.........");
+                $('#agentMessage').val('');
+            });
+            
+        }
+
+
         $scope.redirect = function(url) {
             console.log("redirect....", url);
-            chrome.runtime.sendMessage(
-                'mhmkebjaoeliiemcjapjlipcmoddgcii', { myCustomMessage: url },
-                function(response) {
-                    console.log("response of redirect *****: " + JSON.stringify(response));
-                });
+            // chrome.runtime.sendMessage(
+            //     'mhmkebjaoeliiemcjapjlipcmoddgcii', { myCustomMessage: url },
+            //     function(response) {
+            //         console.log("response of redirect *****: " + JSON.stringify(response));
+            //     });
         }
 
         function getCustomerDetails(mobileNo) {
@@ -302,11 +477,15 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     $scope.customerDetails = customerResult.Customers;
                     if ($scope.customerDetails.length === 1) {
                         $scope.selectedCustomer = $scope.customerDetails[0];
-                        $scope.redirect($scope.selectedCustomer.AccountRecordURL);
+
+                        var url = crmLocalUrl + "AccountNumber=" +$scope.selectedCustomer.AccountNumber;
+                        initiateGetAPI(url);
+                        createPhoneCallActivity($scope.selectedCustomer);
                     }
                 } else {
                     console.log(",,gonn call redirect,,");
-                    $scope.redirect(customerResult.SearchPageURL);
+                    var url = crmLocalUrl + "AccountNumber=0";    
+                    initiateGetAPI(url);
                 }
                 //console.log("customerDetails", $scope.customerDetails);
             };
@@ -382,7 +561,14 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             var errorCB = function(error) {
                 console.log(response);
             };
+            
+            closeCRMSession();
             initiatepostAPI(url, requestData, successCB, errorCB);
+        }
+
+        function closeCRMSession(){
+            var url = crmLocalUrl+"AccountNumber=-1";
+            initiateGetAPI(url);
         }
 
         function createSMSActivity(smsAttributes) {
@@ -421,76 +607,33 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             }, 1000);
         };
 
-        function timer() {
-            ++$scope.seconds;
-
-            if ($scope.seconds == 60) {
-                $scope.seconds = 0;
-                ++$scope.minutes;
-                if ($scope.minutes == 60) {
-                    $scope.minutes = 0;
-                    ++$scope.hours;
-                }
-            }
-            //   $scope.seconds = $scope.seconds < 9 && $scope.seconds.length == 1 ? "0" + $scope.seconds : $scope.seconds;
-            //  $scope.minutes = $scope.minutes < 9 && !$scope.minutes.startsWith("0") ? "0" + $scope.minutes : $scope.minutes;
-            //  $scope.hours = $scope.hours < 9 && !$scope.hours.startsWith("0") ? "0" + $scope.hours : $scope.hours;
+      function timer() {
+      ++$scope.seconds;
+      $scope.seconds = $scope.seconds <=9 ? "0"+$scope.seconds : $scope.seconds;
+      if ($scope.seconds == 60) {
+        $scope.seconds = "0"+"0";
+        ++$scope.minutes;
+        $scope.minutes = $scope.minutes <= 9 ? "0"+$scope.minutes : $scope.minutes;
+        if ($scope.minutes == 60) {
+          $scope.minutes ="0"+"0";
+          ++$scope.hours;
+          $scope.hours = $scope.hours <= 9 ? "0"+$scope.hours : $scope.hours;
         }
-
+      }
+    }
         $scope.stopTimer = function() {
             $interval.cancel(timerID);
             $timeout(cleartimer, 2000);
         };
 
         var cleartimer = function() {
-            $scope.seconds = 0;
-            $scope.minutes = 0;
-            $scope.hours = 0;
+            $scope.seconds = 00;
+            $scope.minutes = 00;
+            $scope.hours = 00;
             $scope.isCallAccepted = false;
         }
 
 
-        // $scope.WebSocketTest = function () {
-        //   window.WebSocket = window.WebSocket || window.MozWebSocket;
-
-        //   var connection = wsConnection = new WebSocket('ws://twilio-client-thilojith.c9users.io');
-
-        //   connection.onopen = function (con) {
-        //     console.log("connecting...................", con);
-        //     connection.send(JSON.stringify({ ky: "heloo", ju: "dfdsf" }));
-        //     // connection is opened and ready to use
-        //   };
-
-        //   connection.onerror = function (error) {
-        //     console.log("error...................", error);
-        //     // an error occurred when sending/receiving data
-        //   };
-
-        //   connection.onmessage = function (message) {
-        //     // try to decode json (I assume that each message from server is json)
-        //     try {
-        //       var json = JSON.parse(message.data);
-        //       console.log("json.................", json)
-        //       handleWSMessage(json);
-        //     } catch (e) {
-        //       console.log('This doesn\'t look like a valid JSON: ', message.data);
-        //       return;
-        //     }s
-        //     // handle incoming message
-        //   };
-
-        // }
-        // function sendMessage(msg) {
-        //   wsConnection.send(JSON.stringify(msg));
-        // }
-        // function handleWSMessage(msg) {
-        //   if (msg.callBackType === "SMS" && msg.assginedWorker === $scope.worker.sid) {
-        //     $scope.inSms = true;
-        //     $scope.msgAttribute = msg;
-        //     $scope.selectedTab = 2;
-        //   }
-        // }
-        // $scope.WebSocketTest();
-
+       
 
     }]);
