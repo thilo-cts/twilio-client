@@ -1,0 +1,38 @@
+<md-tab id="maintab2">
+<md-tab-label>
+Outbound 
+</md-tab-label>
+<md-tab-body>
+    <md-tabs md-dynamic-height md-border-bottom  md-swipe-content="true" md-stretch-tabs="always">
+        <md-tab>
+            <md-tab-label>
+                <a>
+                    <i class="material-icons">phone_in_talk</i>
+                </a>
+            </md-tab-label>
+            <md-tab-body>
+               
+            </md-tab-body>
+        </md-tab>
+        <md-tab>
+            <md-tab-label>
+                <a>
+                    <i class="material-icons m-30">textsms</i>
+                </a>
+            </md-tab-label>
+            <md-tab-body>
+                <section layout-gt="column" layout-align="center center" layout-wrap class="waiting" ng-show="!inSms">
+                    <div>
+                        <md-button class="md-fab md-hue-2 wait">
+                            <i class="material-icons md-48 blink" style="color:white">textsms</i>
+                        </md-button>
+Waiting for a SMS
+
+                    </div>
+                </section>
+             
+            </md-tab-body>
+        </md-tab>
+    </md-tabs>
+</md-tab-body>
+</md-tab>

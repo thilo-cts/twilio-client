@@ -1,0 +1,206 @@
+<md-tab class="maintab1">
+        <md-tab-label>
+            <span class="heading">Inbound</span>
+        </md-tab-label>
+        <md-tab-body>
+            <md-tabs md-dynamic-height md-border-bottom md-selected="selectedTab" md-swipe-content="true">
+                <md-tab id="tab1">
+                    <md-tab-label>
+                        <a>
+                            <i class="material-icons m-30">phone_in_talk</i>
+                        </img>
+                    </a>
+                </md-tab-label>
+                <md-tab-body>
+                    <div ng-show="!inCall">
+                        <section layout-gt="column" layout-align="center center" layout-wrap class="waiting">
+                            <div>
+                                <md-button class="md-fab md-hue-2 wait" aria-label="Reject">
+                                    <i class="material-icons md-48 blink" style="color:white">settings_phone</i>
+                                </md-button>
+Waiting for a call
+
+                            </div>
+                        </section>
+                    </div>
+                    <div ng-show="inCall">
+                        <div>
+                            <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
+                                <md-button ng-disabled="true" class="md-primary">Call from {{incomingPhoneNumber}}</md-button>
+                            </section>
+                            <div class="options" ng-show="!isCallAccepted">
+                                <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
+                                    <md-button class="md-fab md-hue-2 ans" aria-label="Answer">
+                                        <i class="material-icons md-24" ng-click="accept()" style="color:white">call</i>
+                                    </md-button>
+                                    <md-button class="md-fab md-hue-2 rej" aria-label="Reject">
+                                        <i class="material-icons md-24" ng-click="rejectCall()" style="color:white">call</i>
+                                    </md-button>
+                                </section>
+                            </div>
+                            <div class="options" ng-show="isCallAccepted">
+                                <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
+                                    <md-button class="md-fab md-hue-2 trans" aria-label="Transfer">
+                                        <i class="material-icons md-24 " title="transfer" ng-click="transfer()" style="color:white">phone_forwarded</i>
+                                    </md-button>
+                                    <md-button class="md-fab md-hue-2 hold" aria-label="Hold">
+                                        <i class="material-icons md-24" title="hold" ng-click="hold()" style="color:white">phone_paused</i>
+                                    </md-button>
+                                    <md-button class="md-fab md-hue-2 hung" aria-label="Hangup">
+                                        <i class="material-icons md-24" title="Hangup" ng-click="hangUpCall()" style="color:white">call_end</i>
+                                    </md-button>
+                                </section>
+                            </div>
+                            <div class="timeclock" ng-show="isCallAccepted">
+                                <center>
+{{hours}} : {{minutes}} : {{seconds}}
+</center>
+                            </div>
+                        </div>
+                        <div ng-show="isCallAccepted">
+                            <md-input-container class="md-block call-wrap">
+                                <label>Notes</label>
+                                <textarea ng-model="call_wrap" md-select-on-focus></textarea>
+                            </md-input-container>
+                        </div>
+                        <div ng-show="!selectedCustomer && customerDetails">
+                            <md-subheader class="md-no-sticky">
+Matching Contacts
+</md-subheader>
+                            <md-content>
+                                <md-list md-dynamic-height>
+                                    <md-list-item class="md-3-line" ng-repeat="customer in customerDetails" ng-click="onSelectCustomer(customer)" >
+                                        <i class="material-icons md-24 avator_icon">account_circle</i>
+                                        <div class="md-list-item-text  m-t-0">
+                                            <h4> {{ customer.FullName }} </h4>
+                                            <p>
+                                                <a class="customer_url">{{customer.AccountNumber}}</a>
+                                            </p>
+                                        </div>
+                                    </md-list-item>
+                                </md-list>
+                            </md-content>
+                        </div>
+                    </div>
+                </md-tab-body>
+            </md-tab>
+            <md-tab id="tab2">
+                <md-tab-label>
+                    <a>
+                        <i class="material-icons m-30">textsms</i>
+                    </a>
+                </md-tab-label>
+                <md-tab-body>
+                    <section layout-gt="column" layout-align="center center" layout-wrap class="waiting" ng-show="!inSms">
+                        <div>
+                            <md-button class="md-fab md-hue-2 wait">
+                                <i class="material-icons md-48 blink" style="color:white">textsms</i>
+                            </md-button>
+Waiting for a SMS
+
+                        </div>
+                    </section>
+                    <div class="md-display-2">
+                        <div ng-show="inSms">
+                            <div>
+                                <div class="msgbody">
+                                    <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
+                                        <md-button ng-disabled="true" class="md-primary">Message from {{msgAttribute.from}}
+</md-button>
+                                    </section>
+                                </div>
+                                <md-toolbar class="md-hue-2">
+                                    <div class="md-toolbar-tools">
+                                        <span>
+                                            <i class="material-icons" style="color:white">textsms</i>
+                                        </span>
+                                        <span class="sms">Message</span>
+                                    </div>
+                                </md-toolbar>
+                                <md-content>
+                                    <div class="md-tile-left inset" hide-sm>
+                                        <p>{{msgAttribute.subject}}</p>
+                                    </div>
+                                </md-content>
+                                <div class="options" ng-show="!issmsaccepted">
+                                    <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
+                                        <md-button class="md-primary md-raised md-hue-2 accept" ng-click="acceptSMS()" aria-label="Answer">
+Accept  
+                                            <!--<i class="material-icons md-36" " ng-click="acceptSMS() " style="color:white ">check_circle</i>-->
+                                        </md-button>
+                                        <md-button class="md-primary md-raised md-hue-2  reject" ng-click="rejectSMS()" aria-label="Reject ">
+Reject
+                                            <!--<i class="material-icons md-36 " ng-click="rejectSMS() " style="color:white ">highlight_off</i>-->
+                                        </md-button>
+                                    </section>
+                                </div>
+                                <div ng-show="issmsaccepted ">
+                                    <section layout="row " layout-sm="column " layout-align="center center" layout-wrap>
+                                        <md-button class="md-primary md-raised md-hue-2 accept" aria-label="Completed " ng-click="completeTask('SMS') " >
+Close Task 
+                                            <!--<i class="material-icons md-36 " style="color:white ">done_all</i>-->
+                                        </md-button>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                        <!--inSms-->
+                    </div>
+                </md-tab-body>
+            </md-tab>
+            <md-tab id="tab3 ">
+                <md-tab-label>
+                    <a>
+                        <i class="material-icons m-30 ">chat</i>
+                    </a>
+                </md-tab-label>
+                <md-tab-body>
+                    <md-card ng-show="inChat">
+                        <div class="options" ng-show="!isChataccepted">
+                            <div> The chat request from {{chatCustomer}} </div>
+                            <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
+                                <md-button class="md-primary md-raised md-hue-2 accept" aria-label="Answer" ng-click="acceptChat()">Accept</md-button>
+                                <md-button class="md-primary md-raised md-hue-2 reject " aria-label="Reject" ng-click="rejectChat()">Reject</md-button>
+                            </section>
+                        </div>
+                        <section layout="row " class="chat-container" ng-show="isChataccepted">
+                            <md-list md-dynamic-height class="msg ">
+                                <md-list-item ng-repeat="msg in channelMessages">
+                                    <i class="material-icons md-fab " style="color:#000080 ">comment</i>
+                                    <div>
+                                        <div class="message "  ng-class="{'customer' : msg.author !== worker.friendly_name}"> {{msg.message}}</div>
+                                    </div>
+                                </md-list-item>
+                            </md-list>
+                        </section>
+                    </md-card>
+                    <div ng-show="isChataccepted">
+                            <div>
+                                <input type="text" id="agentMessage" />
+                                    <md-icon>
+                                        <i ng-click="sendMessage()" class="material-icons " style="color:#66D9FA ">send</i>
+                                     </md-icon>
+                            </div>
+                        <section layout="row " layout-sm="column " layout-align="center center " layout-wrap>
+                            <md-button class="md-primary md-raised md-hue-2 accept" aria-label="Completed" ng-click="completeTask('Chat')" >Close Task
+                            </md-button>
+                        </section >
+
+                    </div>
+                </md-tab-body>
+            </md-tab>
+            <md-tab id="tab4 ">
+                <md-tab-label>
+                    <a>
+                        <i class="material-icons m-30 ">videocam</i>
+                    </a>
+                </md-tab-label>
+                <md-tab-body>
+                    <div class="md-display-2 ">
+                        <p> Video</p>
+                    </div>
+                </md-tab-body>
+            </md-tab>
+        </md-tabs>
+    </md-tab-body>
+</md-tab>
