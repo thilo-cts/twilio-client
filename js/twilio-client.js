@@ -9,20 +9,22 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.inChat = false;
         $scope.issmsaccepted = false;
         $scope.isChataccepted = false;
+        $scope.isChatClosed=false;
         $scope.msgAttribute = {};
         $scope.selectedTab = 0;
         $scope.call_wrap = "";
+        $scope.chat_wrap = "";
         $scope.selectedCustomer = null;
         $scope.customerDetails = null;
         $scope.channelMessages = [];
-        $scope.agentMessage1 ="hello";
-
+        $scope.agentMessage ="";
         $scope.incomingPhoneNumber = '';
         $scope.seconds = "0"+"0";
         $scope.minutes = "0"+"0";
         $scope.hours = "0"+"0";
 
         $scope.activity = '';
+	$scope.chatCustomerAccountNo="";
 
         var wsConnection = {};
         var worker = {};
@@ -49,7 +51,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             }
         };
 
-
         var initiatepostAPI = function(url, data, successCB, errorCB) {
             $http({
                 url: url,
@@ -59,7 +60,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 dataType: "json"
             }).then(successCB), errorCB
         };
-
 
         $scope.initiateTwilio = function() {
             $http({
@@ -74,7 +74,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 response = response.data;
                 $("#log").text("Connecting to Twilio..");
                 $scope.errorMessage = '';
-
                 $scope.worker = response.worker;
                 setUpCallToken(response.token);
                 setUpWorkerToken($scope.worker.token);
@@ -159,6 +158,9 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     }else if (attributes.callBackType === "CHAT"){
                         addMember(attributes.customerIdentity);
                         $scope.chatCustomer = attributes.customerIdentity;
+                        $scope.chatCustomerAccountNo=attributes.customerAccountNumber;
+                        var url = crmLocalUrl + "AccountNumber=" + $scope.chatCustomerAccountNo;
+                        initiateGetAPI(url);
                         $scope.selectedTab = 2;
                         $scope.inChat = true;
                         $scope.$apply();
@@ -194,7 +196,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             });
         }
 
-
         function changeWorkerStatus(activitySid) {
             var props = { "ActivitySid": activitySid };
             worker.update(props, function(error, worker) {
@@ -221,9 +222,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     }
                     console.log(".......msg attribute....", $scope.msgAttribute);
                     updateCase($scope.msgAttribute.caseId);
-
                 }
-
             );
             $scope.issmsaccepted = true;
         }
@@ -244,7 +243,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             );
         }
 
-
         $scope.acceptChat = function() {
             latestReservation.accept(
                 function(error, reservation) {
@@ -258,9 +256,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                         console.log(property + " : " + reservation[property]);
                     }
                     console.log(".......msg attribute....", $scope.msgAttribute);
-
                 }
-
             );
             //createSMSActivity($scope.msgAttribute);
             $scope.isChataccepted = true;
@@ -283,7 +279,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.inChat = false;
         }
 
-
         $scope.hangUpCall = function() {
             $scope.stopTimer();
             Twilio.Device.disconnectAll();
@@ -292,6 +287,20 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.selectedCustomer = null;
             $scope.customerDetails = null;
             sendCallWrap();
+        }
+
+        $scope.calltochat=function(){
+             $scope.isChatClosed=true;
+             removeCustomerFromChannel();
+        }
+
+        $scope.submitChatWrap=function(){
+            createChatActivity();
+            $scope.completeTask('Chat');
+            $scope.chatCustomerAccountNo="";
+            $scope.chat_wrap="";
+            $scope.isChatClosed=false;
+            console.log("Submit Chat Wrap Function called");
         }
 
         $scope.completeTask = function(taskType) {
@@ -307,20 +316,33 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 $scope.isChataccepted = false;
                 $scope.msgAttribute = {};
                 $scope.channelMessages = [];
-              // removeCustomerFromChannel();
+                console.log("Chat task completed");
             }
-
         }
+        
         function removeCustomerFromChannel(){
             workerChannel.getMembers().then(function(members){
                 console.log("members.............",members);
-                angular.forEach(members, function(key, member){
+                angular.forEach(members, function(member,key){
                     if(member.identity  !== $scope.worker.friendlyName){
-                        member.remove();
+                        member.remove().then(function(response){
+                            workerChannel.getMembers().then(function(members){
+                                console.log("Members after deleting customer",members);
+                            });
+                        });
                     }
-                })
+                });
             });
         }
+
+        // function checkMembers(){
+        //     workerChannel.getMembers().then(function(members){
+        //         console.log("Checking members after deleting the customer from the channel");
+        //         angular.forEach(members,function(member,key){
+        //             console.log("Members remaining",member.identity);
+        //         });
+        //     })
+        // }
 
         Twilio.Device.ready(function(device) {
             $("#log").text("Ready");
@@ -357,15 +379,11 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.$apply();
         });
 
-
-
         $scope.accept = function() {
             console.log("accept..............");
             $scope.isCallAccepted = true;
             $scope.startTimer();
-
             callConnection.accept();
-
         }
 
         $scope.rejectCall = function() {
@@ -373,32 +391,27 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             $scope.inCall = false;
             changeWorkerStatus(auxIdleSid);
             callConnection.reject();
-
         }
+
         $scope.respond = function() {
             $scope.issmsaccepted = true;
         }
 
         $scope.onSelectCustomer = function(customer) {
             createPhoneCallActivity(customer);
-            
             var url = crmLocalUrl + "AccountNumber=" +customer.AccountNumber;
             initiateGetAPI(url);
-
             setTimeout(function() {
                 $scope.selectedCustomer = customer;
             }, 1000)
-
         }
 
 
         function initiateChatClient() {
-           
             chatClient.createChannel({
                 friendlyName: $scope.worker.friendlyName + "_" + $scope.worker.sid,
                 isPrivate: true,
             }).then(function(channel) {
-               
                 console.log("Agent has created a channel..", channel._friendlyName);
                 channel.join().then(function() {
                     console.log("Agent has joined into his owm channel")
@@ -407,10 +420,10 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     channel.on('memberJoined', onMembersJoined);
                      workerChannel = channel;
                     // getAllChannels()
-
                 });
             });
         }
+       
         function getAllChannels(){
             chatClient.getUserChannels().then(function(channels){
                 console.log("All............channels..", channels);
@@ -428,7 +441,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             var minutes = time.getMinutes();
             if (minutes < 10) { minutes = '0' + minutes; }   
             var ampm = Math.floor(time.getHours()/12) ? 'PM' : 'AM';
-            var period = (time.getHours()%12) + ':' + minutes + ' ' + ampm; 
+        var period = (time.getHours()%12||12) + ':' + minutes + ' ' + ampm; 
             var msg = {
                 author: message.author,
                 message: message.body,
@@ -439,7 +452,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         }
 
         function addMember(memberId) {
-            workerChannel.invite(memberId).then(function() {
+            workerChannel.add(memberId).then(function() {
                 console.log("....Member added ....", memberId);
             });
         }
@@ -448,15 +461,15 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             console.log("member  joined.....", member);
         }
 
-        $scope.sendMessage = function() {
-            var msg = $('#agentMessage').val();
+        $scope.sendMessage = function(msg) {
+            var msg=$scope.agentMessage;
+            console.log("agentMessage",msg);
             workerChannel.sendMessage(msg).then(function() {
                 // msg.author = 'me';
                 // $scope.channelMessages.push(msg);
                 console.log("after sent message from agent.........");
-                $('#agentMessage').val('');
-            });
-            
+             });
+             $scope.agentMessage="";
         }
 
         $scope.redirect = function(url) {
@@ -471,14 +484,13 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         function getCustomerDetails(mobileNo) {
 
             var data = { request: { MobileNumber: mobileNo } };
-
             var url = serviceURL + "/GetCustomerDetails";
-
             var successCB = function(response) {
                 console.log("response", response.data);
                 var customerResult = response.data.GetCustomerDetailsResult;
                 if (customerResult.SuccessFlag) {
                     $scope.customerDetails = customerResult.Customers;
+       
                     if ($scope.customerDetails.length === 1) {
                         $scope.selectedCustomer = $scope.customerDetails[0];
 
@@ -497,9 +509,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 console.log(response);
                 $scope.errorMessage = response.data.errormessage;
             };
-
             initiatepostAPI(url, data, successCB, errorCB);
-
         }
 
 
@@ -518,19 +528,17 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
         function createPhoneCallActivity(customer) {
             var url = serviceURL + '/CreatePhoneCallActivity';
-
             var requestData = {
                 request: {
                     AccountNumber: customer.AccountNumber,
                     PhoneNumber: $scope.incomingPhoneNumber,
                     IsInbound: true,
-                    UserID: 'Alice@utilities360.onmicrosoft.com',
+                    UserID: $scope.worker.sid,
                     Subject: 'Phone Call from ' + $scope.incomingPhoneNumber
                 }
             }
             var successCB = function(response) {
                 console.log("response", response.data);
-
                 if (response.data && response.data.CreatePhoneCallActivityResult.SuccessFlag) {
                     crmRecordId = response.data.CreatePhoneCallActivityResult.RecordID;
                 } else {
@@ -545,7 +553,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
         function sendCallWrap() {
             var url = serviceURL + '/CallWrap';
-
             var requestData = {
                 request: {
                     RecordID: crmRecordId,
@@ -563,7 +570,6 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             var errorCB = function(error) {
                 console.log(response);
             };
-            
             closeCRMSession();
             initiatepostAPI(url, requestData, successCB, errorCB);
         }
@@ -575,16 +581,15 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
 
         function createSMSActivity(smsAttributes) {
             var url = serviceURL + '/CreateSMSActivity';
-
             var requestData = {
                 request: {
                     AccountNumber: smsAttributes.accountNo, //'4323657919', //
                     PhoneNumber: smsAttributes.from, //'9611979645',  //
-                    UserID: 'Alice@utilities360.onmicrosoft.com',
+                    UserID: $scope.worker.sid,
                     IsInbound: true,
                     Subject: 'SMS from ' + '9611979645',
                     Description: smsAttributes.subject //'I have issue when submit meet read'
-                }
+                 }
             }
             var successCB = function(response) {
                 console.log("response", response.data);
@@ -592,6 +597,30 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                     console.log("Successfully done call wrap ");
                 } else {
                     console.log("There is an error when trying to do call Wrap", response.data.CallWrapResult.Error);
+                }
+            };
+            var errorCB = function(error) {
+                console.log(response);
+            };
+            initiatepostAPI(url, requestData, successCB, errorCB);
+        }
+
+        function createChatActivity() {
+            var url = serviceURL + '/CreateWebChatActivity';
+            var requestData = {
+                request: {
+                    AccountNumber:$scope.chatCustomerAccountNo,
+                    UserID: $scope.worker.sid,
+                    Subject: 'Chat from ' + $scope.chatCustomer,
+                    Description: $scope.chat_wrap
+                }
+            }
+            var successCB = function(response) {
+                console.log("response", response.data);
+                if (response.data && response.data.CreateWebChatActivityResult.SuccessFlag) {
+                    console.log("Chat Activity has been successfully created");
+                } else {
+                    console.log("There is an error when trying to create Chat Activity");
                 }
             };
             var errorCB = function(error) {
@@ -620,6 +649,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 }
             }
             }
+        
         $scope.stopTimer = function() {
             $interval.cancel(timerID);
             $timeout(cleartimer, 2000);

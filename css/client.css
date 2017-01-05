@@ -244,3 +244,18 @@ agent-message div:last-child small {
     border-color: #eee;
     background-color: #EEEEEE;
 }
+.feedback .chat_customer_no
+{
+    width:40%;
+    margin-top:15%;
+}
+.feedback .submitbtn{
+    width: 100%;
+    margin-top: 30%;
+    background-color: #323669!important;
+    color: white!important;
+    min-height: 25px;
+    line-height: 10px;
+    height: 25px;
+    margin-left: 0px;
+}

@@ -53,8 +53,8 @@ Waiting for a call
                             </div>
                             <div class="timeclock" ng-show="isCallAccepted">
                                 <center>
-{{hours}} : {{minutes}} : {{seconds}}
-</center>
+                                {{hours}} : {{minutes}} : {{seconds}}
+                                </center>
                             </div>
                         </div>
                         <div ng-show="isCallAccepted">
@@ -65,9 +65,9 @@ Waiting for a call
                         </div>
                         <div ng-show="!selectedCustomer && customerDetails">
                             <md-subheader class="md-no-sticky">
-Matching Contacts
-</md-subheader>
-                            <md-content>
+                                Matching Contacts
+                                </md-subheader>
+                             <md-content>
                                 <md-list md-dynamic-height>
                                     <md-list-item class="md-3-line" ng-repeat="customer in customerDetails" ng-click="onSelectCustomer(customer)" >
                                         <i class="material-icons md-24 avator_icon">account_circle</i>
@@ -155,6 +155,15 @@ Close Task
                     </a>
                 </md-tab-label>
                 <md-tab-body>
+                <section layout-gt="column" layout-align="center center" layout-wrap class="waiting" ng-show="!inChat">
+                        <div>
+                            <md-button class="md-fab md-hue-2 wait">
+                                <i class="material-icons md-48 blink" style="color:white">chat</i>
+                            </md-button>
+Waiting for Chat
+
+                        </div>
+                    </section>
                     <md-card ng-show="inChat && !isChataccepted" md-theme="{{ showDarkTheme ? 'dark-purple' : 'default' }}" md-theme-watch>
                             <md-card-title>
                                 <md-card-title-text>
@@ -168,25 +177,33 @@ Close Task
                             </md-card-actions>
                     </md-card>
                     <div ng-show="isChataccepted">
+                     <div ng-show="!isChatClosed">
                         <md-card class="chatarea">
                             <div  ng-repeat="msg in channelMessages">
                                 <div class="agent-message" ng-class="{'customer-message' : msg.author !== worker.friendly_name}">
                                     <div style="word-break: break-all;">
                                         {{msg.message}}
-                                 
                                     </div>
                                     <div><small>{{msg.period}}</small></div>
                                 </div>
                             </div>
-
-                        </md-card>
+                      </md-card>
                         <div class="input-field">
-                            <textarea class="form-control message-area" id="agentMessage" placeholder="Type Your Message here"/> </textarea> 
+                            <textarea class="form-control message-area" ng-model="$parent.agentMessage" placeholder="Type Your Message here"/> </textarea> 
                                 <md-icon>
                                 <i ng-click="sendMessage()" class="material-icons " style="color:#66D9FA ">send</i>
                                 </md-icon>
                          </div>
-                    <md-button class="md-primary closebtn" ng-click="completeTask('Chat')">Close Chat</md-button>
+
+                    <md-button class="md-primary closebtn" ng-click="calltochat()">Close Chat</md-button>
+                    </div>
+                       <div ng-show="isChatClosed" class="feedback">
+                            <md-input-container class="md-block">
+                                <label>Chat Notes</label>
+                                <textarea ng-model="$parent.chat_wrap" md-select-on-focus></textarea>
+                            </md-input-container>
+                    	    <md-button class="md-primary submitbtn" ng-click="submitChatWrap()">Submit</md-button>
+                       </div>
                     </div>
                 </md-tab-body>
             </md-tab>
