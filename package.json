@@ -1,5 +1,10 @@
 {
-  "name"    : "U360",
-  "version" : "0.1.0",
-  "main"    : "main.js"
+  "name": "U360",
+  "version": "0.1.0",
+  "main": "main.js",
+  "Dependencies": {
+    "electron-packager": "^8.4.0",
+    "electron": "latest"
+  }
 }
+

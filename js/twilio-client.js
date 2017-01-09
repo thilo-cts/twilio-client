@@ -13,6 +13,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.msgAttribute = {};
         $scope.selectedTab = 0;
         $scope.call_wrap = "";
+        $scope.chatCustomerAccountNo="";
         $scope.chat_wrap = "";
         $scope.selectedCustomer = null;
         $scope.customerDetails = null;
@@ -22,9 +23,9 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
         $scope.seconds = "0"+"0";
         $scope.minutes = "0"+"0";
         $scope.hours = "0"+"0";
-
+       
         $scope.activity = '';
-	$scope.chatCustomerAccountNo="";
+	
 
         var wsConnection = {};
         var worker = {};
@@ -316,6 +317,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
                 $scope.isChataccepted = false;
                 $scope.msgAttribute = {};
                 $scope.channelMessages = [];
+                closeCRMSession();
                 console.log("Chat task completed");
             }
         }
@@ -324,7 +326,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             workerChannel.getMembers().then(function(members){
                 console.log("members.............",members);
                 angular.forEach(members, function(member,key){
-                    if(member.identity  !== $scope.worker.friendlyName){
+                    if(member.identity  === $scope.chatCustomer){
                         member.remove().then(function(response){
                             workerChannel.getMembers().then(function(members){
                                 console.log("Members after deleting customer",members);
@@ -435,6 +437,8 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             });
         }
 
+
+ 
         function addMessage(message) {
             console.log("message", message);
             var time = message.timestamp;
@@ -471,6 +475,14 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
              });
              $scope.agentMessage="";
         }
+        
+         $scope.isEnterKeyPressed = function(key, msg) {
+            if (key == 13 && msg !== undefined && msg != '') {
+                $scope.sendMessage();
+                console.log("Key Pressed",key);
+            }
+        };
+        
 
         $scope.redirect = function(url) {
             console.log("redirect....", url);
@@ -635,6 +647,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             }, 1000);
         };
 
+
        function timer() {
             ++$scope.seconds;
             $scope.seconds = $scope.seconds <=9 ? "0"+$scope.seconds : $scope.seconds;
@@ -650,6 +663,7 @@ angular.module('agent', ['ngMaterial', 'ngRoute'])
             }
             }
         
+    
         $scope.stopTimer = function() {
             $interval.cancel(timerID);
             $timeout(cleartimer, 2000);

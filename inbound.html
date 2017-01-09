@@ -189,7 +189,7 @@ Waiting for Chat
                             </div>
                       </md-card>
                         <div class="input-field">
-                            <textarea class="form-control message-area" ng-model="$parent.agentMessage" placeholder="Type Your Message here"/> </textarea> 
+                            <textarea class="form-control message-area" ng-model="$parent.agentMessage" ng-keyup="isEnterKeyPressed($event.keyCode,$parent.agentMessage)" placeholder="Type Your Message here"/> </textarea> 
                                 <md-icon>
                                 <i ng-click="sendMessage()" class="material-icons " style="color:#66D9FA ">send</i>
                                 </md-icon>
