@@ -7,7 +7,7 @@
                 <md-tab id="tab1">
                     <md-tab-label>
                         <a>
-                            <i class="material-icons m-30">phone_in_talk</i>
+                            <i class="material-icons m-30" title="Call">phone_in_talk</i>
                         </img>
                     </a>
                 </md-tab-label>
@@ -19,7 +19,7 @@
                                     <i class="material-icons md-48 blink" style="color:white">settings_phone</i>
                                 </md-button>
 Waiting for a call
-
+ 
                             </div>
                         </section>
                     </div>
@@ -44,7 +44,7 @@ Waiting for a call
                                         <i class="material-icons md-24 " title="transfer" ng-click="transfer()" style="color:white">phone_forwarded</i>
                                     </md-button>
                                     <md-button class="md-fab md-hue-2 hold" aria-label="Hold">
-                                        <i class="material-icons md-24" title="hold" ng-click="hold()" style="color:white">phone_paused</i>
+                                       <i class="material-icons md-24" title="hold" ng-click="hold()" style="color:white">phone_paused</i>
                                     </md-button>
                                     <md-button class="md-fab md-hue-2 hung" aria-label="Hangup">
                                         <i class="material-icons md-24" title="Hangup" ng-click="hangUpCall()" style="color:white">call_end</i>
@@ -60,7 +60,7 @@ Waiting for a call
                         <div ng-show="isCallAccepted">
                             <md-input-container class="md-block call-wrap">
                                 <label>Notes</label>
-                                <textarea ng-model="call_wrap" md-select-on-focus></textarea>
+                                <textarea ng-model="$parent.call_wrap" md-select-on-focus></textarea>
                             </md-input-container>
                         </div>
                         <div ng-show="!selectedCustomer && customerDetails">
@@ -87,7 +87,7 @@ Waiting for a call
             <md-tab id="tab2">
                 <md-tab-label>
                     <a>
-                        <i class="material-icons m-30">textsms</i>
+                        <i class="material-icons m-30" title="SMS">textsms</i>
                     </a>
                 </md-tab-label>
                 <md-tab-body>
@@ -97,7 +97,7 @@ Waiting for a call
                                 <i class="material-icons md-48 blink" style="color:white">textsms</i>
                             </md-button>
 Waiting for a SMS
-
+ 
                         </div>
                     </section>
                     <div class="md-display-2">
@@ -125,7 +125,7 @@ Waiting for a SMS
                                 <div class="options" ng-show="!issmsaccepted">
                                     <section layout="row" layout-sm="column" layout-align="center center" layout-wrap>
                                         <md-button class="md-primary md-raised md-hue-2 accept" ng-click="acceptSMS()" aria-label="Answer">
-Accept  
+Accept 
                                             <!--<i class="material-icons md-36" " ng-click="acceptSMS() " style="color:white ">check_circle</i>-->
                                         </md-button>
                                         <md-button class="md-primary md-raised md-hue-2  reject" ng-click="rejectSMS()" aria-label="Reject ">
@@ -137,7 +137,7 @@ Reject
                                 <div ng-show="issmsaccepted ">
                                     <section layout="row " layout-sm="column " layout-align="center center" layout-wrap>
                                         <md-button class="md-primary md-raised md-hue-2 accept" aria-label="Completed " ng-click="completeTask('SMS') " >
-Close Task 
+Close Task
                                             <!--<i class="material-icons md-36 " style="color:white ">done_all</i>-->
                                         </md-button>
                                     </section>
@@ -151,17 +151,17 @@ Close Task
             <md-tab id="tab3 ">
                 <md-tab-label>
                     <a>
-                        <i class="material-icons m-30 ">chat</i>
+                        <i class="material-icons m-30" title="WebChat">chat</i>
                     </a>
                 </md-tab-label>
                 <md-tab-body>
-                <section layout-gt="column" layout-align="center center" layout-wrap class="waiting" ng-show="!inChat">
+                <section layout-gt="column" layout-align="center center"  layout-wrap class="waiting" ng-show="!inChat">
                         <div>
                             <md-button class="md-fab md-hue-2 wait">
-                                <i class="material-icons md-48 blink" style="color:white">chat</i>
+                                <i class="material-icons md-24" style="color:white">chat</i>
                             </md-button>
-Waiting for Chat
-
+                       Waiting for Chat
+ 
                         </div>
                     </section>
                     <md-card ng-show="inChat && !isChataccepted" md-theme="{{ showDarkTheme ? 'dark-purple' : 'default' }}" md-theme-watch>
@@ -177,7 +177,7 @@ Waiting for Chat
                             </md-card-actions>
                     </md-card>
                     <div ng-show="isChataccepted">
-                     <div ng-show="!isChatClosed">
+                     <!--<div ng-show="!isChatClosed">-->
                         <md-card class="chatarea">
                             <div  ng-repeat="msg in channelMessages">
                                 <div class="agent-message" ng-class="{'customer-message' : msg.author !== worker.friendly_name}">
@@ -189,34 +189,39 @@ Waiting for Chat
                             </div>
                       </md-card>
                         <div class="input-field">
-                            <textarea class="form-control message-area" ng-model="$parent.agentMessage" ng-keyup="isEnterKeyPressed($event.keyCode,$parent.agentMessage)" placeholder="Type Your Message here"/> </textarea> 
+                            <textarea class="form-control message-area" ng-model="$parent.agentMessage" ng-keyup="isEnterKeyPressed($event.keyCode,$parent.agentMessage)" placeholder="Type Your Message here"/> </textarea>
                                 <md-icon>
                                 <i ng-click="sendMessage()" class="material-icons " style="color:#66D9FA ">send</i>
                                 </md-icon>
                          </div>
-
-                    <md-button class="md-primary closebtn" ng-click="calltochat()">Close Chat</md-button>
-                    </div>
-                       <div ng-show="isChatClosed" class="feedback">
+ 
+                    <md-button class="md-primary closebtn" ng-click="submitChatWrap()">Close Chat</md-button>
+                       <!--<div ng-show="isChatClosed" class="feedback">
                             <md-input-container class="md-block">
                                 <label>Chat Notes</label>
                                 <textarea ng-model="$parent.chat_wrap" md-select-on-focus></textarea>
                             </md-input-container>
-                    	    <md-button class="md-primary submitbtn" ng-click="submitChatWrap()">Submit</md-button>
-                       </div>
+                             <md-button class="md-primary submitbtn" ng-click="submitChatWrap()">Submit</md-button>
+                       </div>-->
                     </div>
                 </md-tab-body>
             </md-tab>
             <md-tab id="tab4 ">
                 <md-tab-label>
                     <a>
-                        <i class="material-icons m-30 ">videocam</i>
+                        <i class="material-icons m-30" title="Video">videocam</i>
                     </a>
                 </md-tab-label>
                 <md-tab-body>
-                    <div class="md-display-2 ">
-                        <p> Video</p>
-                    </div>
+                            <section layout-gt="column" layout-align="center center" ng-show="!inChat">
+                        <div class="waiting">
+                            <md-button class="md-fab md-hue-2 wait">
+                                <i class="material-icons md-24 blink" style="color:white">videocam</i>
+                            </md-button>
+Future roadmap to enable video chat
+ 
+                        </div>
+                    </section>
                 </md-tab-body>
             </md-tab>
         </md-tabs>
